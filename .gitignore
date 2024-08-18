@@ -67,4 +67,5 @@ emscripten_build/
 .DS_Store
 Thumbs.db
 
-artifacts
+artifacts/
+.states/
