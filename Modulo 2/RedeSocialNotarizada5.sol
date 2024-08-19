@@ -31,7 +31,7 @@ contract RedeSocialNotarizada {
         require(!utilizado,         "Um perfil ja esta guardado!");
         require(msg.value >= preco, "Precisa receber o valor correto!");
 
-        envia_troco(preco - msg.value);
+        envia_troco();
         envia_pagamento();
 
         perfil = _perfil;
@@ -43,20 +43,17 @@ contract RedeSocialNotarizada {
         emitir_token();
     }
 
-/**
- * @dev Envia troco para o dono do perfil, se necessário. 
- * @param _valor Quantidade de ether para enviar, em wei.
- */     
-     /**
-      * @dev Envia troco para o dono do perfil, se necessário. 
-      * @param _valor Quantidade de ether para enviar, em wei.
-      */
-    function envia_troco(uint _valor) private {
-        if (_valor > 0){
-            payable(msg.sender).transfer(_valor);
+    /**
+    * @dev Envia troco para o dono do perfil, se necessário. 
+    */     
+    function envia_troco() private {
+        uint256 valor = preco - msg.value;
+
+        if (valor > 0){
+            payable(msg.sender).transfer(valor);
         }
-    }
-       
+    } 
+      
     /**
     * @dev Envia o saldo restante do contrato para o criador
     */

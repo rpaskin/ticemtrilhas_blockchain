@@ -2,12 +2,17 @@
 
 pragma solidity >=0.8.2 <0.9.0;
 
+// TODO: modifier apenas_dono para mudar o preco ou cancelar o contrato (perfil falso?)
+
 contract RedeSocialNotarizada {
     string  public perfil;      // nome do perfil que estamos salvando
     address public dono;        // carteira do dono
     uint256 public preco;       // preco em wei para salvar nesse contrato
     address public criador;     // criador do contrato
     bool public utilizado;      // contrato ja foi utilizado?
+
+    // Evento para ser emitido quando o perfil é guardado
+    event Guardado(string _perfil, address _dono);
 
     /**
      * @dev Armazena o preco e criador para usar o contrato
@@ -24,25 +29,34 @@ contract RedeSocialNotarizada {
      */
     function guardar(string calldata _perfil, address _dono) public payable {
         require(!utilizado,         "Um perfil ja esta guardado!");
-        // require(msg.value == preco, "Precisa receber o valor correto!");
-        require(msg.value >= preco, "Precisa receber o valor correto!");        // 10. Tem que receber no mínimo o valor correto (TROCO)
+        require(msg.value >= preco, "Precisa receber o valor correto!");
 
-        envia_troco(preco - msg.value);     // 11. ABSTRACAO TROCO
-        envia_pagamento();                  // 13. ABSTRACAO PAGAMENTO SERVICO NOTARIAL
+        envia_troco();
+        envia_pagamento();
 
         perfil = _perfil;
         dono = _dono;
         utilizado = true;
+
+        emit Guardado(perfil, dono);
     }
 
-    function envia_troco(uint _valor) private {     // 12. PRIVATE; fazer sem o private primeiro (HACKER imagina se pudesse enviar um valor a qualquer hora para o msg.sender)
-        if (_valor > 0){
-            payable(msg.sender).transfer(_valor);
+    /**
+    * @dev Envia troco para o dono do perfil, se necessário. 
+    */     
+    function envia_troco() private {
+        uint256 valor = preco - msg.value;
+
+        if (valor > 0){
+            payable(msg.sender).transfer(valor);
         }
     }
-
-    function envia_pagamento() private {                        // 13. PRIVATE
+       
+    /**
+    * @dev Envia o saldo restante do contrato para o criador
+    */
+    function envia_pagamento() private {
         // envia o resto do saldo do contrato para o criador
-        payable(criador).transfer(address(this).balance);       // 14. THIS - Contract related e address(this) e .balance Members of Address Types https://docs.soliditylang.org/en/develop/units-and-global-variables.html
+        payable(criador).transfer(address(this).balance);
     }
 }
