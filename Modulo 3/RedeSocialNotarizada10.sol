@@ -47,7 +47,27 @@ contract RedeSocialNotarizada is ERC20Interface {
         count = 10000;
         saldo_tokens[criador] = count;
     }
-    
+
+    /**
+    * @dev Cria novos tokens
+    * @param _quantidade Quantidade de tokens criados
+    */
+    function mint(uint256 _quantidade) public {
+        require(msg.sender == criador, "Apenas o dono do contrato pode mintar tokens!");
+
+        count += _quantidade;
+        saldo_tokens[criador] += _quantidade;       
+    }
+
+    /**
+    * @dev Envia tokens para os outros detentores de tokens
+    * @param _quantidade Quantidade de tokens a serem enviados
+    */
+    function airdrop(uint256 _quantidade) public {
+        require(msg.sender == criador, "Apenas o dono do contrato pode mintar tokens!");
+
+    }
+
     /**
      * @dev Permite salvar um nome de perfil associado a um endereco de carteira. Requer que seja enviado o valor definido no construtor do contrato.
      * @param _perfil String representando o nome do perfil a ser salvo.
@@ -89,7 +109,7 @@ contract RedeSocialNotarizada is ERC20Interface {
     }
 
     function balanceOf(address _dono) external view returns (uint balance){
-        return saldo_tokens[_dono];
+        return saldo_tokens[msg.sender];
     }
 
     // Retorna o quanto o _gastador pode transferir a partir da conta de _dono
