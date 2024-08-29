@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract TesteToken is ERC20, Ownable, ERC20Permit {
+contract RedeSocialNotarizada is ERC20, Ownable, ERC20Permit {
     constructor(address initialOwner)
-        ERC20("TesteToken", "TTK")
+        ERC20("Rede Social Notarizada Token", "RSNT")
         Ownable(initialOwner)
-        ERC20Permit("TesteToken")
+        ERC20Permit("Rede Social Notarizada Token")
     {}
 
     function mint(address to, uint256 amount) public onlyOwner {

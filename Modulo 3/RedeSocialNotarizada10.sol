@@ -18,6 +18,9 @@ interface ERC20Interface {
 }
 
 contract RedeSocialNotarizada is ERC20Interface {
+    // event Debug(string, uint);
+    // event Debug2(string, address);
+    // event Debug3(string, uint, uint, bool);
 
     struct RegistroSocial {
         string  perfil;         // nome do perfil que estamos salvando
@@ -27,16 +30,23 @@ contract RedeSocialNotarizada is ERC20Interface {
     // RegistroSocial public registro;
     mapping(address => RegistroSocial) public registros;
 
-    mapping(address => uint) private saldo_tokens;
+    address[] public detentores_de_tokens;
 
-    mapping(address => mapping(address => uint)) permite_sacar;
+    mapping(address => uint) public saldo_tokens;
 
-    uint256 public preco;       // preco em wei para salvar nesse contrato
-    address public criador;     // criador do contrato
-    uint256 public count;       // quantidade total de registros
+    mapping(address => mapping(address => uint)) public permite_sacar;
+
+    uint256 public  preco;       // preco em wei para salvar nesse contrato
+    address public  criador;     // criador do contrato
+    uint256 private count;       // quantidade total de registros
 
     // Evento para ser emitido quando o perfil é guardado
     event Guardado(string _perfil, address _dono);
+
+    modifier apenasCriador {
+        require(msg.sender == criador, "Apenas o criador pode fazer isso!");
+        _;
+    }
 
     /**
      * @dev Armazena o preco, criador e cria novos tokens para usar o contrato
@@ -45,27 +55,41 @@ contract RedeSocialNotarizada is ERC20Interface {
         preco = 1;
         criador = msg.sender;
         count = 10000;
+        adicionar_detentor(criador);
         saldo_tokens[criador] = count;
+    }
+
+    function adicionar_detentor(address _detentor) private {
+        if (saldo_tokens[_detentor] == 0){
+            detentores_de_tokens.push(_detentor);
+        }
     }
 
     /**
     * @dev Cria novos tokens
     * @param _quantidade Quantidade de tokens criados
     */
-    function mint(uint256 _quantidade) public {
-        require(msg.sender == criador, "Apenas o dono do contrato pode mintar tokens!");
-
+    function mint(uint256 _quantidade) public apenasCriador {
         count += _quantidade;
-        saldo_tokens[criador] += _quantidade;       
+        saldo_tokens[criador] += _quantidade;
     }
 
     /**
     * @dev Envia tokens para os outros detentores de tokens
     * @param _quantidade Quantidade de tokens a serem enviados
     */
-    function airdrop(uint256 _quantidade) public {
-        require(msg.sender == criador, "Apenas o dono do contrato pode mintar tokens!");
+    function airdrop(uint256 _quantidade) public apenasCriador {
+        uint tokens_sem_criador = count - saldo_tokens[criador];
+        uint proporcao = _quantidade / tokens_sem_criador;
 
+        for (uint i = 0; i < detentores_de_tokens.length; i++) {
+            address detentor = detentores_de_tokens[i];
+
+            if (detentor != criador && saldo_tokens[detentor] > 0){
+                uint novos_tokens = saldo_tokens[detentor] * proporcao;
+                transfer(detentor, novos_tokens);
+            }
+        }
     }
 
     /**
@@ -109,7 +133,7 @@ contract RedeSocialNotarizada is ERC20Interface {
     }
 
     function balanceOf(address _dono) external view returns (uint balance){
-        return saldo_tokens[msg.sender];
+        return saldo_tokens[_dono];
     }
 
     // Retorna o quanto o _gastador pode transferir a partir da conta de _dono
@@ -125,6 +149,7 @@ contract RedeSocialNotarizada is ERC20Interface {
         require(saldo_tokens[msg.sender] >= _quantos, "Nao ha saldo suficiente para transferir!");
 
         saldo_tokens[msg.sender] -= _quantos;
+        adicionar_detentor(_para);
         saldo_tokens[_para]      += _quantos;
 
         emit Transfer(msg.sender, _para, _quantos);
@@ -148,6 +173,7 @@ contract RedeSocialNotarizada is ERC20Interface {
         require(permite_sacar[_de][msg.sender] >= _quantos, "Nao tem permissao para retirar!");
 
         saldo_tokens[_de] = saldo_tokens[_de] - _quantos;
+        adicionar_detentor(_para);
         saldo_tokens[_para] = saldo_tokens[_para] + _quantos;
 
         emit Transfer(_de, _para, _quantos);
